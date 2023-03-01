@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.592">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>ESTIMATED ONE-YEAR ABORTION INCIDENCE</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+<script src="abor_incidence_files/libs/clipboard/clipboard.min.js"></script>
+<script src="abor_incidence_files/libs/quarto-html/quarto.js"></script>
+<script src="abor_incidence_files/libs/quarto-html/popper.min.js"></script>
+<script src="abor_incidence_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="abor_incidence_files/libs/quarto-html/anchor.min.js"></script>
+<link href="abor_incidence_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="abor_incidence_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="abor_incidence_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="abor_incidence_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="abor_incidence_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="css/pma.css">
+</head>
+
+<body class="fullcontent">
+
+<div class="page-layout-custom">  
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">ESTIMATED ONE-YEAR ABORTION INCIDENCE</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<div class="panel-grid layout-sidebar ms-md-0 layout-sidebar-left">
+<div class="cell panel-sidebar card bg-light p-2 g-col-24 g-col-lg-7">
+<div class="cell-output-display no-overflow-x">
+<div class="form-group shiny-input-container">
+<label class="control-label" id="country-label" for="country">Country:</label>
+<div>
+<select id="country"><option value="Nigeria" selected="">Nigeria</option>
+<option value="Cote d'Ivoire">Cote d'Ivoire</option></select>
+<script type="application/json" data-for="country" data-nonempty="">{"plugins":["selectize-plugin-a11y"]}</script>
+</div>
+</div>
+</div>
+<div class="cell-output-display no-overflow-x">
+<div class="form-group shiny-input-container">
+<label class="control-label" id="group-label" for="group">Group by:</label>
+<div>
+<select id="group"><option value="age" selected="">Age</option>
+<option value="urban">Urban / Rural</option>
+<option value="edu">Education</option>
+<option value="wealth">Wealth</option>
+<option value="marstat">Marital Status</option></select>
+<script type="application/json" data-for="group" data-nonempty="">{"plugins":["selectize-plugin-a11y"]}</script>
+</div>
+</div>
+</div>
+<div class="cell-output-display">
+<div id="measure" class="form-group shiny-input-checkboxgroup shiny-input-container" role="group" aria-labelledby="measure-label">
+<label class="control-label" id="measure-label" for="measure">Abortion Measure:</label>
+<div class="shiny-options-group">
+<div class="checkbox">
+<label>
+<input type="checkbox" name="measure" value="reg" checked="checked">
+<span><span style="color: #00263A;">Period Regulation Only</span></span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="measure" value="abor" checked="checked">
+<span><span style="color: #98579B;">Termination Only</span></span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="measure" value="any" checked="checked">
+<span><span style="color: #B56576;">Termination or Regulation</span></span>
+</label>
+</div>
+<div class="checkbox">
+<label>
+<input type="checkbox" name="measure" value="avg" checked="checked">
+<span><span style="color: #EAAC8B;">Average of Measures</span></span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="panel-fill panel-grid g-col-24 g-col-lg-17 pt-3 pt-lg-0">
+<div class="g-col-24">
+<div class="cell panel-fill">
+<div class="cell-output-display">
+<div class="shiny-plot-output html-fill-item" id="plot" style="width:100%;height:400px;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell" data-context="server">
+
+</div>
+<p>
+<script type="application/shiny-prerendered" data-context="server-start">
+library(shiny)
+library(tidyverse)
+library(showtext)
+
+
+font_add(
+  family = "cabrito",
+  regular = "www/cabritosansnormregular-webfont.ttf"
+)
+showtext_auto()
+
+dat <- read_rds("www/dat.rds") 
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server">
+selectedData <- reactive({
+  dat %>% 
+    filter(country == input$country) %>% 
+    unnest(any_of(input$group)) %>% 
+    filter(measure %in% input$measure)
+})
+
+output$plot <- renderPlot(width = 700, height = 400, expr = {
+  selectedData() %>%
+    ggplot(aes(x = group, y = coef, color = measure)) + 
+    geom_point(position = position_dodge(width = 0.3)) + 
+    geom_errorbar(
+      aes(ymin = `_low`, ymax = `_upp`), 
+      width = 0, 
+      position = position_dodge(width = 0.3)
+    ) + 
+    theme_minimal()  %+replace% theme(
+      panel.grid.major.x = element_blank(),
+      text = element_text(family = "cabrito", size = 22),
+      legend.position = "none"
+    ) + 
+    labs(x = NULL,color = NULL, y = "Number of abortions per 1,000 women") + 
+    scale_y_continuous(limits = c(0, 110)) + 
+    scale_color_manual(values = c(
+      "reg" = "#00263A",
+      "abor" = "#98579B",
+      "any" = "#B56576",
+      "avg" = "#EAAC8B"
+    )) 
+})
+</script>
+ 
+<script type="application/shiny-prerendered" data-context="server-extras">
+ojs_define <- function(..., .session = shiny::getDefaultReactiveDomain()) {
+  quos <- rlang::enquos(...)
+  vars <- rlang::list2(...)
+  nm <- names(vars)
+  if (is.null(nm)) {
+    nm <- rep_len("", length(vars))
+  }
+  mapply(function(q, nm, val) {
+    # Infer name, if possible
+    if (nm == "") {
+      tryCatch({
+        nm <- rlang::as_name(q)
+      }, error = function(e) {
+        code <- paste(collapse = "\n", deparse(rlang::f_rhs(q)))
+        stop("ojs_define() could not create a name for the argument: ", code)
+      })
+    }
+    .session$output[[nm]] <- val
+    outputOptions(.session$output, nm, suspendWhenHidden = FALSE)
+    .session$sendCustomMessage("ojs-export", list(name = nm))
+    NULL
+  }, quos, nm, vars, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+  invisible()
+}
+</script>
+</p>
+<!--html_preserve-->
+<script type="application/shiny-prerendered" data-context="dependencies">
+{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["selectize"]},{"type":"character","attributes":{},"value":["0.12.4"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www/shared/selectize"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/selectize.min.js","accessibility/js/selectize-plugin-a11y.min.js"]},{"type":"character","attributes":{},"value":["css/selectize.bootstrap3.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["shiny"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["1.7.4"]}]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","version","src","meta","script","stylesheet","head","attachment","package","all_files","pkgVersion"]},"class":{"type":"character","attributes":{},"value":["html_dependency"]}},"value":[{"type":"character","attributes":{},"value":["selectize"]},{"type":"character","attributes":{},"value":["0.12.4"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["file"]}},"value":[{"type":"character","attributes":{},"value":["www/shared/selectize"]}]},{"type":"NULL"},{"type":"character","attributes":{},"value":["js/selectize.min.js","accessibility/js/selectize-plugin-a11y.min.js"]},{"type":"character","attributes":{},"value":["css/selectize.bootstrap3.css"]},{"type":"NULL"},{"type":"NULL"},{"type":"character","attributes":{},"value":["shiny"]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["1.7.4"]}]}]}
+</script>
+<!--/html_preserve-->
+<!--html_preserve-->
+
+<script type="application/shiny-prerendered" data-context="execution_dependencies">
+{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["packages","version"]},"class":{"type":"character","attributes":{},"value":["data.frame"]},"row.names":{"type":"integer","attributes":{},"value":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87]}},"value":[{"type":"character","attributes":{},"value":["assertthat","backports","base","broom","bslib","cachem","cellranger","cli","colorspace","compiler","crayon","datasets","DBI","dbplyr","digest","dplyr","ellipsis","evaluate","fansi","fastmap","forcats","fs","gargle","generics","ggplot2","glue","googledrive","googlesheets4","graphics","grDevices","grid","gtable","haven","hms","htmltools","htmlwidgets","httpuv","httr","jquerylib","jsonlite","knitr","later","lifecycle","lubridate","magrittr","memoise","methods","mime","modelr","munsell","pillar","pkgconfig","promises","purrr","R6","Rcpp","readr","readxl","reprex","rlang","rmarkdown","rstudioapi","rvest","sass","scales","shiny","showtext","showtextdb","stats","stringi","stringr","sysfonts","tibble","tidyr","tidyselect","tidyverse","timechange","tools","tzdb","utf8","utils","vctrs","withr","xfun","xml2","xtable","yaml"]},{"type":"character","attributes":{},"value":["0.2.1","1.4.1","4.2.2","1.0.1","0.4.2","1.0.6","1.1.0","3.5.0","2.0-3","4.2.2","1.5.1","4.2.2","1.1.3","2.2.1","0.6.29","1.1.0","0.3.2","0.16","1.0.3","1.1.0","0.5.2","1.5.2","1.2.0","0.1.3","3.4.0","1.6.2","2.0.0","1.0.1","4.2.2","4.2.2","4.2.2","0.3.1","2.5.1","1.1.2","0.5.4","1.5.4","1.6.5","1.4.4","0.1.4","1.8.3","1.41","1.3.0","1.0.3","1.9.0","2.0.3","2.0.1","4.2.2","0.12","0.1.10","0.5.0","1.8.1","2.0.3","1.2.0.1","1.0.0","2.5.1","1.0.9","2.1.3","1.4.1","2.0.2","1.0.6","2.19","0.14","1.0.3","0.4.2","1.2.1","1.7.4","0.9-5","3.0","4.2.2","1.7.8","1.5.0","0.8.8","3.1.8","1.2.1","1.2.0","1.3.2","0.1.1","4.2.2","0.3.0","1.2.2","4.2.2","0.5.2","2.5.0","0.36","1.3.3","1.8-4","2.3.5"]}]}]}
+</script>
+<!--/html_preserve-->
+
+
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /container fluid -->
+
+
+
+</body></html>

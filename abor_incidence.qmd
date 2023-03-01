@@ -1,0 +1,88 @@
+---
+title: "ESTIMATED ONE-YEAR ABORTION INCIDENCE"
+format: 
+  html:
+    page-layout: custom
+    css: 'css/pma.css'
+server: shiny
+---
+
+```{r, context="setup", include="false"}
+library(shiny)
+library(tidyverse)
+library(showtext)
+
+
+font_add(
+  family = "cabrito",
+  regular = "www/cabritosansnormregular-webfont.ttf"
+)
+showtext_auto()
+
+dat <- read_rds("www/dat.rds") 
+```
+
+```{r, panel="sidebar"}
+selectInput(
+  "country", 
+  "Country:", 
+  unique(dat$country)
+)
+
+selectInput(
+  'group', 
+  'Group by:', 
+  list(Age = "age", `Urban / Rural` = "urban", Education = "edu", 
+       Wealth = "wealth", `Marital Status` = "marstat"),
+)
+
+checkboxGroupInput(
+  inputId = "measure",
+  label="Abortion Measure:",
+  choiceNames = list(
+    HTML("<span style='color: #00263A;'>Period Regulation Only</span>"),
+    HTML("<span style='color: #98579B;'>Termination Only</span>"),
+    HTML("<span style='color: #B56576;'>Termination or Regulation</span>"),
+    HTML("<span style='color: #EAAC8B;'>Average of Measures</span>")
+  ),
+  choiceValues = list("reg", "abor", "any", "avg"),
+  selected =  list("reg", "abor", "any", "avg")
+)
+```
+
+```{r, panel="fill"}
+plotOutput('plot')
+```
+
+```{r, context="server"}
+selectedData <- reactive({
+  dat %>% 
+    filter(country == input$country) %>% 
+    unnest(any_of(input$group)) %>% 
+    filter(measure %in% input$measure)
+})
+
+output$plot <- renderPlot(width = 700, height = 400, expr = {
+  selectedData() %>%
+    ggplot(aes(x = group, y = coef, color = measure)) + 
+    geom_point(position = position_dodge(width = 0.3)) + 
+    geom_errorbar(
+      aes(ymin = `_low`, ymax = `_upp`), 
+      width = 0, 
+      position = position_dodge(width = 0.3)
+    ) + 
+    theme_minimal()  %+replace% theme(
+      panel.grid.major.x = element_blank(),
+      text = element_text(family = "cabrito", size = 22),
+      legend.position = "none"
+    ) + 
+    labs(x = NULL,color = NULL, y = "Number of abortions per 1,000 women") + 
+    scale_y_continuous(limits = c(0, 110)) + 
+    scale_color_manual(values = c(
+      "reg" = "#00263A",
+      "abor" = "#98579B",
+      "any" = "#B56576",
+      "avg" = "#EAAC8B"
+    )) 
+})
+```

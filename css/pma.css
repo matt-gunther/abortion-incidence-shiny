@@ -1,0 +1,26 @@
+@import url('https://assets.ipums.org/_css/font-faces.css');
+
+h1{
+  font-family: 'cabrito_sans_norm_regular';
+  text-transform: uppercase;
+  color: #00263A;
+}
+
+
+body{
+  font-family: 'cabrito_subset';
+}
+
+b, strong {
+  font-family: "cabrito_sans_cond_demi";
+  font-weight: 100;
+}
+
+.checkbox {
+  font-family: "cabrito_sans_cond_demi";
+  font-weight: 100;
+}
+
+.shiny-options-group {
+  margin-top: 0 !important;
+}
